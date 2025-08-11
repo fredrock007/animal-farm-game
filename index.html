@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Animal Farm Project – Flashcards + Snake Quiz</title>
+  <style>
+    :root { --bg:#0f172a; --panel:#111827; --ink:#e5e7eb; --muted:#94a3b8; --accent:#22d3ee; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial; background: linear-gradient(120deg,#0b1023,#0f172a 40%,#0b1023); color:var(--ink); }
+    header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid rgba(255,255,255,.06); }
+    header h1 { font-size:clamp(18px, 2.6vw, 28px); margin:0; letter-spacing:.4px; }
+    header .sub { color:var(--muted); font-size:12px; }
+    .wrap { display:grid; grid-template-columns: 1.2fr .8fr; gap:18px; padding:20px; max-width:1100px; margin:0 auto; }
+    @media (max-width: 900px){ .wrap{ grid-template-columns:1fr; } }
+    .card, .panel { background: linear-gradient(180deg, #0b1324, #0a0f1c); border:1px solid rgba(255,255,255,.06); border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    .panel { padding:16px; }
+
+    /* FLASHCARDS */
+    .flash { display:flex; flex-direction:column; gap:12px; }
+    .flash-top { display:flex; align-items:center; justify-content:space-between; padding:6px 6px 0; }
+    .flash-top h2 { margin:0; font-size:18px; letter-spacing:.3px; }
+    .flashcard { position:relative; perspective:1000px; height:260px; }
+    .fc { position:absolute; inset:0; padding:22px; border-radius:14px; background: radial-gradient(1200px 300px at 10% 0%, rgba(34,211,238,.15), transparent 50%), #0e1628; border:1px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center; text-align:center; transition: transform .6s; backface-visibility:hidden; }
+    .fc p { font-size:clamp(16px, 2vw, 20px); line-height:1.4; margin:0; }
+    .fc.back { transform: rotateY(180deg); }
+    .flashcard.flipped .front { transform: rotateY(180deg); }
+    .flashcard.flipped .back { transform: rotateY(360deg); }
+    .flash-controls { display:flex; gap:10px; justify-content:center; align-items:center; padding:10px 0 0; }
+    .btn { background:#0b1324; border:1px solid rgba(255,255,255,.08); color:var(--ink); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600; }
+    .btn:hover { border-color: rgba(34,211,238,.5); box-shadow: 0 0 0 3px rgba(34,211,238,.15) inset; }
+    .pill { font-size:12px; padding:6px 10px; border-radius:999px; border:1px dashed rgba(255,255,255,.12); color:var(--muted); }
+
+    /* SNAKE */
+    .game { padding:12px; }
+    .game header { display:flex; gap:16px; align-items:center; padding:0; border:none; }
+    .stat { background:#0b1324; border:1px solid rgba(255,255,255,.08); padding:8px 12px; border-radius:10px; font-size:13px; color:var(--muted); }
+    canvas { background: #0b1324; width:100%; height:auto; border:1px solid rgba(255,255,255,.08); border-radius:14px; display:block; }
+    .game-ctls { display:flex; gap:10px; justify-content:flex-start; padding:10px 0 0; }
+
+    /* QUIZ MODAL */
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:20px; }
+    .modal-inner { width:min(560px, 96vw); background:#0e1628; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:18px; }
+    .modal h3 { margin:0 0 8px; }
+    .choices { display:grid; gap:10px; margin-top:12px; }
+    .choice { background:#0b1324; border:1px solid rgba(255,255,255,.08); padding:10px; border-radius:12px; cursor:pointer; }
+    .choice.correct { border-color:#22d3ee; box-shadow: 0 0 0 3px rgba(34,211,238,.15) inset; }
+    .choice.wrong { border-color:#ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.15) inset; }
+
+    /* SIDE PANEL */
+    .panel h3 { margin:4px 0 10px; font-size:16px; }
+    .list { display:grid; gap:8px; font-size:14px; color:var(--muted); }
+    .kbd { background:#0b1324; border:1px solid rgba(255,255,255,.08); padding:2px 6px; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; }
+    footer { text-align:center; padding:18px; color:var(--muted); font-size:12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Grade 9 English • Project Readiness</h1>
+      <div class="sub">Flashcards to revise • Snake game with pop-up quiz checkpoints</div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- LEFT: FLASHCARDS + SNAKE -->
+    <div class="stack">
+      <div class="panel flash">
+        <div class="flash-top">
+          <h2>Project Flashcards</h2>
+          <span class="pill" id="progress">1 / 10</span>
+        </div>
+        <div class="flashcard" id="flashcard">
+          <div class="fc front"><p id="q">What are the two parts of the Term 3 project?</p></div>
+          <div class="fc back"><p id="a">Part 1: Research Task (250–300 words, 2+ credible sources, cover page & bibliography). Part 2: Creative Writing (400–600 words allegory/retelling with a clear narrative arc, characters, conflict, dialogue & description).</p></div>
+        </div>
+        <div class="flash-controls">
+          <button class="btn" id="prev">◀ Prev</button>
+          <button class="btn" id="flip">Flip</button>
+          <button class="btn" id="next">Next ▶</button>
+          <button class="btn" id="shuffle">Shuffle 🔀</button>
+        </div>
+      </div>
+
+      <div class="panel game">
+        <header>
+          <div class="stat">Score: <strong id="score">0</strong></div>
+          <div class="stat">Level: <strong id="level">1</strong></div>
+          <div class="stat">Use <span class="kbd">↑</span> <span class="kbd">↓</span> <span class="kbd">←</span> <span class="kbd">→</span></div>
+        </header>
+        <canvas id="board" width="360" height="360" aria-label="Snake game board"></canvas>
+        <div class="game-ctls">
+          <button class="btn" id="start">Start</button>
+          <button class="btn" id="pause">Pause</button>
+          <button class="btn" id="reset">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: HINTS / REQUIREMENTS -->
+    <div class="panel">
+      <h3>Know the Essentials</h3>
+      <div class="list">
+        <div>• <strong>Part 1 – Research (20)</strong>: 250–300 words; link <em>Animal Farm</em> to real history/politics; use <strong>2+ credible sources</strong>; include <strong>cover page</strong> & <strong>bibliography</strong>.</div>
+        <div>• <strong>Part 2 – Creative (20)</strong>: 400–600 words; options: modern reimagining, forgotten character’s view, or brand-new allegory; show <strong>theme</strong>, <strong>conflict</strong>, clear <strong>beginning–middle–end</strong>.</div>
+        <div>• Key terms: <em>propaganda, allegory, theme, narrative arc, credibility</em>.</div>
+        <div>• Presentation: brief oral based on your story (speak to theme & techniques).</div>
+      </div>
+      <h3 style="margin-top:16px">Tips</h3>
+      <div class="list">
+        <div>• For Part 1, make a 1-sentence <strong>claim</strong> + two pieces of <strong>evidence</strong> from your sources.</div>
+        <div>• For Part 2, plan a 6-step story spine and insert a propaganda technique (e.g., repetition, bandwagon).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ MODAL -->
+  <div class="modal" id="quiz">
+    <div class="modal-inner">
+      <h3 id="quiz-q">Checkpoint</h3>
+      <div class="choices" id="quiz-choices"></div>
+    </div>
+  </div>
+
+  <footer>© SPARK HS • English HL • Term 3 – Project Readiness</footer>
+
+<script>
+// ------------------ FLASHCARDS ------------------
+const deck = [
+  {q:'What are the two parts of the Term 3 project?', a:'Part 1: Research Task (250–300 words, 2+ credible sources, cover page & bibliography). Part 2: Creative Writing (400–600 words allegory/retelling with a clear narrative arc, characters, conflict, dialogue & description).'},
+  {q:'What is the encompassing element of Part 1?', a:'A researched link between ideas in Animal Farm and real historical/modern political realities, supported by credible sources and referencing.'},
+  {q:'What is the encompassing element of Part 2?', a:'An original allegory/narrative that clearly shows a theme (e.g., power or propaganda) through developed characters, conflict, and a complete plot arc.'},
+  {q:'Minimum sources you must use in Part 1?', a:'At least two credible sources; include a bibliography/reference list.'},
+  {q:'Required word counts for Part 1 and Part 2?', a:'Part 1: 250–300 words. Part 2: 400–600 words.'},
+  {q:'Give two possible options for the creative task.', a:'(1) Modern Animal Farm (school, tech company, social media). (2) A forgotten character’s perspective. (3) A brand-new allegory with animal characters.'},
+  {q:'Name three key terms you should understand.', a:'Propaganda; Allegory; Theme; (also: Narrative arc; Credibility).'},
+  {q:'List three features every Part 2 story must show.', a:'Clear theme; developed characters & conflict; beginning–middle–end; effective dialogue & description.'},
+  {q:'What should your presentation be based on?', a:'Your written story—explain your theme and the techniques you used (e.g., propaganda methods).'},
+  {q:'One simple way to start Part 1 planning?', a:'Write a 1-sentence claim linking an Animal Farm idea to a real event, then list two credible sources and two pieces of evidence.'}
+];
+let idx = 0, flipped = false;
+const flashcard = document.getElementById('flashcard');
+const qEl = document.getElementById('q');
+const aEl = document.getElementById('a');
+const prog = document.getElementById('progress');
+function render(){ qEl.textContent = deck[idx].q; aEl.textContent = deck[idx].a; prog.textContent = `${idx+1} / ${deck.length}`; flashcard.classList.remove('flipped'); flipped=false; }
+render();
+document.getElementById('flip').onclick = ()=>{ flashcard.classList.toggle('flipped'); flipped=!flipped; };
+document.getElementById('next').onclick = ()=>{ idx = (idx+1)%deck.length; render(); };
+document.getElementById('prev').onclick = ()=>{ idx = (idx-1+deck.length)%deck.length; render(); };
+document.getElementById('shuffle').onclick = ()=>{ for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]];} idx=0; render(); };
+
+// ------------------ SNAKE + QUIZ ------------------
+const board = document.getElementById('board');
+const ctx = board.getContext('2d');
+const scoreEl = document.getElementById('score');
+const levelEl = document.getElementById('level');
+const size = 15; // grid cell size
+const cells = board.width / size;
+let snake, dir, food, timer, speed, playing=false, score=0, level=1;
+
+function resetGame(){
+  snake = [{x:7,y:7}];
+  dir = {x:1,y:0};
+  spawnFood();
+  score = 0; level = 1; speed = 150; updateHUD();
+  draw();
+}
+function updateHUD(){ scoreEl.textContent=score; levelEl.textContent=level; }
+function spawnFood(){ food = {x:Math.floor(Math.random()*cells), y:Math.floor(Math.random()*cells)}; }
+function draw(){
+  ctx.clearRect(0,0,board.width,board.height);
+  // grid background
+  for(let i=0;i<cells;i++){
+    for(let j=0;j<cells;j++){
+      ctx.fillStyle = (i+j)%2===0? '#0c1426':'#0a1020';
+      ctx.fillRect(i*size,j*size,size,size);
+    }
+  }
+  // food
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillRect(food.x*size, food.y*size, size, size);
+  // snake
+  ctx.fillStyle = '#e5e7eb';
+  snake.forEach((p)=>{ ctx.fillRect(p.x*size, p.y*size, size, size); });
+}
+function step(){
+  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+  // walls/self
+  if(head.x<0||head.y<0||head.x>=cells||head.y>=cells||snake.some((p,i)=>i&&p.x===head.x&&p.y===head.y)){
+    pause();
+    alert('Game over! Score: '+score);
+    return;
+  }
+  snake.unshift(head);
+  if(head.x===food.x && head.y===food.y){
+    score++;
+    if(score%3===0){ showQuiz(); }
+    if(score%5===0 && speed>70){ level++; speed-=10; restart(); }
+    spawnFood();
+    updateHUD();
+  } else {
+    snake.pop();
+  }
+  draw();
+}
+function start(){ if(playing) return; playing=true; timer=setInterval(step, speed); }
+function pause(){ playing=false; clearInterval(timer); }
+function restart(){ pause(); start(); }
+
+resetGame();
+
+document.getElementById('start').onclick = start;
+document.getElementById('pause').onclick = pause;
+document.getElementById('reset').onclick = ()=>{ pause(); resetGame(); };
+
+window.addEventListener('keydown', (e)=>{
+  const k=e.key;
+  if(k==='ArrowUp' && dir.y!==1) dir={x:0,y:-1};
+  if(k==='ArrowDown' && dir.y!==-1) dir={x:0,y:1};
+  if(k==='ArrowLeft' && dir.x!==1) dir={x:-1,y:0};
+  if(k==='ArrowRight' && dir.x!==-1) dir={x:1,y:0};
+});
+
+// ------------- QUIZ LOGIC -------------
+const modal = document.getElementById('quiz');
+const qBox = document.getElementById('quiz-q');
+const choicesBox = document.getElementById('quiz-choices');
+const checkpoints = [
+  {q:'Required word counts?', options:['200/400','250–300 & 400–600','300–350 & 600–800','150–200 & 300–450'], correct:1},
+  {q:'Encompassing element of Part 1?', options:['A fantasy world','A researched link to real events/politics','Only personal opinion','Drawing characters'], correct:1},
+  {q:'Minimum sources in Part 1?', options:['None','One credible source','At least two credible sources','Only the novel'], correct:2},
+  {q:'Which is NOT a Part 2 requirement?', options:['Clear theme','Complete plot arc','Bibliography','Developed characters & conflict'], correct:2},
+  {q:'An example of a propaganda technique in the novel:', options:['Repetition of slogans by the sheep','Using complex statistics','Neutral reporting only','Ignoring the audience'], correct:0}
+];
+function showQuiz(){
+  pause();
+  const item = checkpoints[Math.floor(Math.random()*checkpoints.length)];
+  qBox.textContent = 'Checkpoint: ' + item.q;
+  choicesBox.innerHTML = '';
+  item.options.forEach((opt,i)=>{
+    const d=document.createElement('div');
+    d.className='choice'; d.textContent=opt;
+    d.onclick=()=>{
+      if(i===item.correct){ d.classList.add('correct'); setTimeout(()=>{ modal.style.display='none'; start(); }, 250); }
+      else { d.classList.add('wrong'); }
+    };
+    choicesBox.appendChild(d);
+  });
+  modal.style.display='flex';
+}
+</script>
+</body>
+</html>
