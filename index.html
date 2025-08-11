@@ -1,440 +1,491 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Animal Farm Project – Flashcards + Snake Quiz (Touch-Friendly)</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>Neon Drift: Endless Cyberpunk Racer + Quiz</title>
 <style>
   :root{
-    --bg:#0b132b; --panel:#1c2541; --accent:#5bc0be; --accent2:#fca311; --text:#e6eef5;
+    --bg:#05060a; --panel:#0e1220; --accent:#00e5ff; --accent2:#ff2bd6; --text:#e7f6ff; --good:#22c55e; --bad:#ef4444;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
-  a{color:var(--accent)}
-  .wrap{max-width:1000px;margin:0 auto;padding:16px}
-  header{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-  header h1{font-size:20px;margin:0}
-  .mode-switch{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-  .btn{background:var(--accent);border:none;color:#071018;font-weight:700;padding:10px 14px;border-radius:12px;cursor:pointer}
-  .btn.alt{background:var(--accent2);color:#1a1302}
-  .btn.ghost{background:#0000;border:2px solid var(--accent);color:#e6eef5}
-  .btn:active{transform:translateY(1px)}
-  .panel{background:var(--panel);border:1px solid #2a355c;border-radius:16px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
-  /* tabs */
-  .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-  .tab{flex:1;min-width:180px;text-align:center;padding:10px 12px;border-radius:12px;border:2px solid #31406f;cursor:pointer}
-  .tab.active{background:#20305c;border-color:var(--accent)}
-  /* flashcards */
-  .cards{display:grid;grid-template-columns:1fr;gap:12px;padding:14px}
-  .card{position:relative;min-height:230px;border-radius:14px;background:#101933;border:1px solid #2a355c;padding:18px}
-  .card h3{margin:0 0 8px;font-size:16px;color:#a6b7ff}
-  .term{font-size:20px;line-height:1.5}
-  .flip{position:absolute;right:14px;bottom:14px}
-  .card small{color:#a4b4c8}
-  .fc-controls{display:flex;gap:8px;flex-wrap:wrap}
-  /* snake */
-  .snake-wrap{display:grid;gap:12px;padding:14px}
-  .board-wrap{position:relative;display:grid;grid-template-columns:1fr;justify-items:center}
-  canvas{background:#0e1a36;border:2px solid #2a355c;border-radius:12px;touch-action:none}
-  .hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-  .score{background:#0e1a36;border:1px solid #2a355c;border-radius:12px;padding:8px 12px}
-  .quiz-box{background:#0e1a36;border:1px solid #2a355c;border-radius:12px;padding:10px}
-  .answers{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
-  .answers button{width:100%}
-  /* on-screen controls */
-  .dpad{
-    position:fixed;right:14px;bottom:14px;display:grid;grid-template-columns:60px 60px 60px;
-    grid-template-rows:60px 60px 60px;gap:8px;z-index:50;opacity:.95;
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  #ui{
+    position:fixed; inset:0 0 auto 0; display:flex; gap:12px; align-items:center; padding:10px 12px;
+    background:linear-gradient(to bottom,rgba(0,0,0,.55),rgba(0,0,0,0));
+    user-select:none; -webkit-user-select:none; pointer-events:none;
   }
-  .dpad .sp{visibility:hidden}
+  .pill{pointer-events:auto; background:rgba(14,18,32,.6); border:1px solid #243056; border-radius:12px; padding:8px 10px; display:flex; gap:10px; align-items:center}
+  .stat{font-weight:700}
+  .btn{pointer-events:auto; background:var(--accent); border:none; color:#001018; font-weight:900; padding:10px 14px; border-radius:12px; cursor:pointer}
+  .btn.ghost{background:transparent;border:2px solid var(--accent);color:var(--text)}
+  #overlay{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(0,0,0,.65); backdrop-filter: blur(4px);
+  }
+  .card{
+    width:min(720px,92vw); background:var(--panel); border:1px solid #26345e; border-radius:16px; padding:16px; box-shadow:0 20px 60px rgba(0,0,0,.45)
+  }
+  .card h2{margin:0 0 8px}
+  .answers{display:grid; gap:10px; margin-top:10px}
+  .answers button{border:none;border-radius:12px; padding:12px; font-weight:700; cursor:pointer}
+  .answers button:hover{filter:brightness(1.1)}
+  .ok{background:rgba(34,197,94,.15); color:#b5f7c8; border:2px solid var(--good)}
+  .no{background:rgba(239,68,68,.15); color:#ffc1c1; border:2px solid var(--bad)}
+  #centerMsg{
+    position:fixed; left:50%; top:14%; transform:translateX(-50%); font-weight:900; letter-spacing:.5px;
+    background:rgba(14,18,32,.6); border:1px solid #243056; border-radius:12px; padding:8px 12px; display:none
+  }
+  /* mobile controls */
+  #pad{
+    position:fixed; right:14px; bottom:14px; display:grid; grid-template-columns:68px 68px; gap:10px;
+    opacity:.95; user-select:none
+  }
   .ctl{
-    background:#0e1a36;border:2px solid #31406f;border-radius:14px;color:#cfe6ff;
-    font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;
-    user-select:none;-webkit-user-select:none;touch-action:manipulation;
+    background:rgba(14,18,32,.6); border:2px solid #2a3b6a; border-radius:14px; color:#cfe6ff; font-size:18px; font-weight:900;
+    display:flex; align-items:center; justify-content:center; height:60px; cursor:pointer
   }
-  .ctl:active{transform:scale(.98);border-color:var(--accent)}
-  .tip{font-size:12px;color:#a4b4c8}
-  /* responsive */
-  @media (min-width:760px){
-    .cards{grid-template-columns:1.1fr .9fr}
-    .answers{grid-template-columns:1fr 1fr}
+  .ctl:active{transform:scale(.98); border-color:var(--accent)}
+  @media (min-width:880px){ #pad{display:none} }
+  /* small toast */
+  #toast{
+    position:fixed; bottom:14px; left:50%; transform:translateX(-50%); background:#091022; color:#a8eaff;
+    border:1px solid #1d2a52; border-radius:12px; padding:8px 12px; display:none
   }
-  @media (max-width:480px){
-    .dpad{grid-template-columns:56px 56px 56px;grid-template-rows:56px 56px 56px}
-  }
+  a, a:visited{color:var(--accent)}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Animal Farm Project – Flashcards + Snake Quiz</h1>
-    <div class="mode-switch">
-      <button class="btn ghost" id="flashBtn">Flashcards</button>
-      <button class="btn alt" id="snakeBtn">Snake Quiz</button>
-    </div>
-  </header>
-
-  <section id="flashcards" class="panel" aria-label="Flashcards">
-    <div class="tabs">
-      <div class="tab active" data-set="project">Project Overview</div>
-      <div class="tab" data-set="themes">Themes & Concepts</div>
-      <div class="tab" data-set="characters">Characters & Allegory</div>
-    </div>
-    <div class="cards">
-      <div class="card" id="card">
-        <h3 id="setName">Project Overview</h3>
-        <div class="term" id="term">Tap “Flip” to view the definition, then “Next”.</div>
-        <p class="tip" id="progress">1 / 6</p>
-        <div class="fc-controls">
-          <button class="btn" id="flipBtn">Flip</button>
-          <button class="btn ghost" id="prevBtn">Prev</button>
-          <button class="btn" id="nextBtn">Next</button>
-          <button class="btn alt" id="shuffleBtn" title="Shuffle current set">Shuffle</button>
-        </div>
-        <button class="btn flip" id="bigFlip" aria-label="Flip card">Flip</button>
-      </div>
-    </div>
-  </section>
-
-  <section id="snake" class="panel" aria-label="Snake Quiz" style="display:none">
-    <div class="snake-wrap">
-      <div class="hud">
-        <div class="score">Score: <span id="score">0</span> | Level: <span id="level">1</span></div>
-        <div>
-          <button class="btn" id="startBtn">Start</button>
-          <button class="btn ghost" id="pauseBtn">Pause</button>
-          <button class="btn ghost" id="restartBtn">Restart</button>
-        </div>
-      </div>
-
-      <div class="board-wrap">
-        <canvas id="board" width="420" height="420" aria-label="Snake board"></canvas>
-      </div>
-
-      <div class="quiz-box" id="quizBox" style="display:none">
-        <div id="qText">Question appears here.</div>
-        <div class="answers" id="answers"></div>
-      </div>
-
-      <div class="tip">Touch controls: use the on-screen arrows or <strong>swipe</strong> on the board. Turn tablet to landscape for best play.</div>
-    </div>
-  </section>
+<div id="ui">
+  <div class="pill"><span>Speed:</span> <span class="stat" id="speed">0</span></div>
+  <div class="pill"><span>Coins:</span> <span class="stat" id="coins">0</span></div>
+  <div class="pill"><span>Distance:</span> <span class="stat" id="dist">0</span> m</div>
+  <div class="pill"><span>Score:</span> <span class="stat" id="score">0</span></div>
+  <button class="btn ghost" id="pauseBtn" style="margin-left:auto">Pause</button>
+  <button class="btn" id="restartBtn">Restart</button>
 </div>
 
-<!-- On-screen D-Pad -->
-<div class="dpad" id="dpad" aria-label="On-screen controls" role="group">
-  <div class="sp"></div>
-  <div class="ctl" data-dir="up">▲</div>
-  <div class="sp"></div>
-  <div class="ctl" data-dir="left">◀</div>
-  <div class="ctl" data-dir="down">▼</div>
-  <div class="ctl" data-dir="right">▶</div>
+<div id="centerMsg"></div>
+<div id="toast"></div>
+
+<!-- Quiz Overlay -->
+<div id="overlay">
+  <div class="card">
+    <h2>Quiz: <em>Lord of the Flies</em></h2>
+    <div id="qText">Question here…</div>
+    <div class="answers" id="answers"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn ghost" id="skip">Skip</button>
+      <button class="btn" id="resume">Resume</button>
+    </div>
+  </div>
 </div>
 
-<script>
-/* ------------------------ FLASHCARDS ------------------------ */
-const sets = {
-  project: [
-    {t:"Two parts of the project", d:"Part 1 = Research (theme, context, propaganda). Part 2 = Creative Writing (a modern allegory) + short presentation."},
-    {t:"Part 1 — Encompassing element", d:"Connect Animal Farm to real-world politics/history using credible sources; include a reference list."},
-    {t:"Part 2 — Encompassing element", d:"Write an original allegory/short story mirroring themes (power, propaganda, corruption, equality) with a clear structure."},
-    {t:"Submission basics", d:"A4 research write-up (±250–300 words), bibliography, cover page; story 400–600 words; presentation 2–3 minutes."},
-    {t:"Key quote for Part 1", d:"“Four legs good, two legs bad.” — discuss propaganda and how simple slogans can control groups."},
-    {t:"Mark focus", d:"Part 1 (20): concepts, sources, clarity. Part 2 (20): theme, character, conflict, craft. Presentation (10): clarity, evidence, delivery."}
-  ],
-  themes: [
-    {t:"Propaganda", d:"Messages designed to shape opinion/behaviour. In the novel, slogans and manipulated facts keep animals obedient."},
-    {t:"Power & Corruption", d:"Unchecked power corrupts. Leaders change rules to benefit themselves."},
-    {t:"Equality vs. Control", d:"Revolution promises equality; the elite re-write rules to entrench control."},
-    {t:"Critical Citizenship", d:"In democracies, citizens must question authority and verify claims against evidence."},
-    {t:"Allegory", d:"A story with a second meaning: characters/events represent real people/systems."},
-    {t:"Maxim analysis", d:"“Four legs good, two legs bad” shows how oversimplification stifles thinking."}
-  ],
-  characters: [
-    {t:"Napoleon", d:"Represents authoritarian leadership; uses fear/propaganda to consolidate power."},
-    {t:"Snowball", d:"Represents revolutionary idealism, later scapegoated to control the farm."},
-    {t:"Squealer", d:"The propaganda voice; twists language and ‘statistics’ to justify power."},
-    {t:"Sheep", d:"Echo chamber: repeat slogans, drown out debate."},
-    {t:"Clover/Boxer", d:"Hard-working, loyal; exploited by the leadership."},
-    {t:"Seven Commandments → one", d:"Gradual rule-changes show how rights erode when people stop checking power."}
-  ]
-};
+<!-- Mobile controls -->
+<div id="pad" aria-label="controls">
+  <div class="ctl" id="left">◀</div>
+  <div class="ctl" id="right">▶</div>
+  <div class="ctl" id="boost">BOOST</div>
+  <div class="ctl" id="brake">BRAKE</div>
+</div>
 
-let currentSetKey = "project";
-let idx = 0, showingDefinition = false;
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-const setName = document.getElementById("setName");
-const term = document.getElementById("term");
-const progress = document.getElementById("progress");
-const tabs = document.querySelectorAll(".tab");
+const DPR = Math.min(2, window.devicePixelRatio || 1);
 
-function renderCard(){
-  const set = sets[currentSetKey];
-  const item = set[idx];
-  setName.textContent = document.querySelector(`.tab[data-set="${currentSetKey}"]`).textContent;
-  term.innerHTML = `<strong>${showingDefinition? "Definition" : "Term"}</strong><br>${showingDefinition? item.d : item.t}`;
-  progress.textContent = `${idx+1} / ${set.length}`;
+/* ---------- Scene / Camera / Renderer ---------- */
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x05060a, 0.03);
+
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 2000);
+camera.position.set(0, 2.4, 6);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setClearColor(0x05060a, 1);
+renderer.setPixelRatio(DPR);
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* ---------- Neon world lighting ---------- */
+const hemi = new THREE.HemisphereLight(0x1ae0ff, 0x090a12, 0.5);
+scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xff2bd6, 0.6);
+dir.position.set(5, 8, 3);
+scene.add(dir);
+
+/* ---------- Track parameters ---------- */
+const TRACK_WIDTH = 8;
+const SEG_LEN = 40;              // length of one segment
+const SEG_COUNT = 12;            // keep recycled
+const WALL_H = 5;
+const FLOOR_Y = 0;
+
+const neonMat = (c)=> new THREE.MeshStandardMaterial({
+  color: c, metalness: 0.4, roughness: 0.2, emissive: c, emissiveIntensity: 0.5
+});
+const darkMat = new THREE.MeshStandardMaterial({color:0x0b0f1c, metalness:0.2, roughness:0.9});
+const glowLaneMat = (c)=> new THREE.MeshBasicMaterial({color:c});
+
+/* ---------- Build recycled track segments ---------- */
+const segments = [];
+const wallsLeft = [];
+const wallsRight = [];
+const floors = [];
+const laneStrips = [];
+
+const floorGeo = new THREE.PlaneGeometry(TRACK_WIDTH, SEG_LEN);
+const wallGeo  = new THREE.PlaneGeometry(SEG_LEN, WALL_H);
+const stripGeo = new THREE.PlaneGeometry(TRACK_WIDTH, 0.1);
+
+for (let i=0;i<SEG_COUNT;i++){
+  const group = new THREE.Group();
+
+  const floor = new THREE.Mesh(floorGeo, darkMat);
+  floor.rotation.x = -Math.PI/2;
+  floor.position.set(0, FLOOR_Y, -i*SEG_LEN);
+  group.add(floor);
+  floors.push(floor);
+
+  const left = new THREE.Mesh(wallGeo, neonMat(0x1935ff));
+  left.rotation.y = Math.PI/2;
+  left.position.set(-TRACK_WIDTH/2, WALL_H/2, -i*SEG_LEN);
+  group.add(left);
+  wallsLeft.push(left);
+
+  const right = new THREE.Mesh(wallGeo, neonMat(0x00e5ff));
+  right.rotation.y = -Math.PI/2;
+  right.position.set(TRACK_WIDTH/2, WALL_H/2, -i*SEG_LEN);
+  group.add(right);
+  wallsRight.push(right);
+
+  // glowing lane strips every ~2m
+  for(let s=0; s<SEG_LEN; s+=2){
+    const strip = new THREE.Mesh(stripGeo, glowLaneMat((s%4===0)?0xff2bd6:0x00e5ff));
+    strip.rotation.x = -Math.PI/2;
+    strip.position.set(0, FLOOR_Y+0.01, -i*SEG_LEN - s);
+    group.add(strip);
+    laneStrips.push(strip);
+  }
+
+  segments.push(group);
+  scene.add(group);
 }
 
-tabs.forEach(tab=>{
-  tab.addEventListener("click", ()=>{
-    tabs.forEach(t=>t.classList.remove("active"));
-    tab.classList.add("active");
-    currentSetKey = tab.dataset.set;
-    idx = 0; showingDefinition = false;
-    renderCard();
+/* ---------- Player car ---------- */
+const car = new THREE.Group();
+const body = new THREE.Mesh(
+  new THREE.BoxGeometry(1.1, 0.4, 2),
+  new THREE.MeshStandardMaterial({color:0x0efeff, emissive:0x0efeff, emissiveIntensity:0.4, metalness:0.5, roughness:0.3})
+);
+body.position.y = 0.35;
+car.add(body);
+// canopy
+const canopy = new THREE.Mesh(
+  new THREE.BoxGeometry(0.7, 0.3, 0.8),
+  new THREE.MeshStandardMaterial({color:0xff2bd6, emissive:0xff2bd6, emissiveIntensity:0.6})
+);
+canopy.position.set(0,0.6,-0.1);
+car.add(canopy);
+// light bars
+const barGeo = new THREE.BoxGeometry(0.2,0.2,1.8);
+const leftBar = new THREE.Mesh(barGeo, neonMat(0x00e5ff));
+leftBar.position.set(-0.65,0.25,0);
+const rightBar = new THREE.Mesh(barGeo, neonMat(0x1935ff));
+rightBar.position.set(0.65,0.25,0);
+car.add(leftBar,rightBar);
+
+car.position.set(0, 0.2, 4);
+scene.add(car);
+
+/* ---------- Coins & Boosts ---------- */
+const coinGeo = new THREE.TorusGeometry(0.25, 0.09, 12, 24);
+const coinMat = new THREE.MeshStandardMaterial({color:0xffe066, emissive:0xffcc00, emissiveIntensity:0.7, metalness:0.3, roughness:0.4});
+const coins = [];
+
+const boostGeo = new THREE.BoxGeometry(TRACK_WIDTH*0.7, 0.05, 2);
+const boostMat = new THREE.MeshBasicMaterial({color:0x73ffb2});
+const boosts = [];
+
+const spawnPoolZ = -SEG_COUNT*SEG_LEN + 10;
+
+function randX(){ return (Math.random()*0.8-0.4) * (TRACK_WIDTH*0.8); }
+
+function spawnCoin(z){
+  const m = new THREE.Mesh(coinGeo, coinMat);
+  m.position.set(randX(), 0.7, z);
+  m.userData.type = "coin";
+  scene.add(m); coins.push(m);
+}
+function spawnBoost(z){
+  const m = new THREE.Mesh(boostGeo, boostMat);
+  m.position.set(0, 0.03, z);
+  m.rotation.x = -Math.PI/2;
+  m.userData.type = "boost";
+  scene.add(m); boosts.push(m);
+}
+
+// seed some collectibles
+for (let i=0;i<22;i++) spawnCoin(spawnPoolZ + Math.random()*SEG_COUNT*SEG_LEN);
+for (let i=0;i<8;i++) spawnBoost(spawnPoolZ + Math.random()*SEG_COUNT*SEG_LEN);
+
+/* ---------- Game state ---------- */
+let running = true, pausedForQuiz = false;
+let tPrev = performance.now();
+let speed = 18;                 // forward m/s (approx)
+let targetSpeed = 22;
+let maxSpeed = 32;
+let minSpeed = 6;
+let steer = 0;
+let dist = 0;
+let score = 0;
+let coinsCount = 0;
+let boostTimer = 0;
+
+const hud = {
+  speed: document.getElementById("speed"),
+  coins: document.getElementById("coins"),
+  dist:  document.getElementById("dist"),
+  score: document.getElementById("score"),
+};
+const overlay = document.getElementById("overlay");
+const qText = document.getElementById("qText");
+const answersEl = document.getElementById("answers");
+const centerMsg = document.getElementById("centerMsg");
+const toast = document.getElementById("toast");
+
+/* ---------- Input ---------- */
+const keys = {};
+window.addEventListener("keydown", e=>{ keys[e.key.toLowerCase()] = true; });
+window.addEventListener("keyup",   e=>{ keys[e.key.toLowerCase()] = false; });
+
+document.getElementById("left").addEventListener("pointerdown", ()=>keys["arrowleft"]=true);
+document.getElementById("right").addEventListener("pointerdown", ()=>keys["arrowright"]=true);
+document.getElementById("boost").addEventListener("pointerdown", ()=>keys[" "]=true);
+document.getElementById("brake").addEventListener("pointerdown", ()=>keys["shift"]=true);
+["left","right","boost","brake"].forEach(id=>{
+  document.getElementById(id).addEventListener("pointerup", ()=>{
+    if(id==="left") keys["arrowleft"]=false;
+    if(id==="right") keys["arrowright"]=false;
+    if(id==="boost") keys[" "]=false;
+    if(id==="brake") keys["shift"]=false;
   });
 });
 
-document.getElementById("flipBtn").onclick =
-document.getElementById("bigFlip").onclick = ()=>{
-  showingDefinition = !showingDefinition; renderCard();
-};
-document.getElementById("nextBtn").onclick = ()=>{
-  const set = sets[currentSetKey];
-  idx = (idx+1) % set.length; showingDefinition = false; renderCard();
-};
-document.getElementById("prevBtn").onclick = ()=>{
-  const set = sets[currentSetKey];
-  idx = (idx - 1 + set.length) % set.length; showingDefinition = false; renderCard();
-};
-document.getElementById("shuffleBtn").onclick = ()=>{
-  const set = sets[currentSetKey];
-  for(let i=set.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[set[i],set[j]]=[set[j],set[i]];}
-  idx = 0; showingDefinition=false; renderCard();
-};
+/* ---------- Simple collision helpers ---------- */
+function aabbIntersect(a,b){
+  return (Math.abs(a.x-b.x) <= (a.w+b.w)*0.5) && (Math.abs(a.z-b.z) <= (a.d+b.d)*0.5);
+}
+function carAABB(){
+  return {x:car.position.x, z:car.position.z, w:1.3, d:2.0};
+}
 
-renderCard();
-
-/* tab switch (top buttons) */
-const flashBtn = document.getElementById("flashBtn");
-const snakeBtn = document.getElementById("snakeBtn");
-const flashcards = document.getElementById("flashcards");
-const snake = document.getElementById("snake");
-flashBtn.onclick = ()=>{flashcards.style.display="block";snake.style.display="none";};
-snakeBtn.onclick = ()=>{flashcards.style.display="none";snake.style.display="block";};
-
-/* ------------------------ SNAKE + QUIZ (TOUCH) ------------------------ */
-const canvas = document.getElementById("board");
-const ctx = canvas.getContext("2d");
-const grid = 21;                 // 21x21 grid
-
-let snakeBody, dir, nextDir, food, running=false, score=0, level=1, tickMs=190, loopId=null;
-let foodsEaten = 0;              // <<— exact trigger for quiz: ask after every 2 foods
-let pendingQuestion=false;
-let gameIsOver=false;
-
-const scoreEl = document.getElementById("score");
-const levelEl = document.getElementById("level");
-const startBtn = document.getElementById("startBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const restartBtn = document.getElementById("restartBtn");
-const quizBox = document.getElementById("quizBox");
-const qText = document.getElementById("qText");
-const answersEl = document.getElementById("answers");
-
-/* Quiz bank – extended and aligned with your brief */
+/* ---------- Quiz Bank (LotF) ---------- */
 const QUIZ = [
-  {q:"Project structure?", a:["Two parts: Research + Creative writing (+ presentation)","Only a test","Only a speech","Only a poem"], correct:0},
-  {q:"Part 1 focuses on…", a:["Creative plot","Historical/real links + propaganda analysis","Drawing characters","Only grammar"], correct:1},
-  {q:"Part 2 focuses on…", a:["Original allegory with theme & conflict","Copying the novel","Writing a script of Chapter 3","Biography"], correct:0},
-  {q:"Example of propaganda in the novel?", a:["‘Four legs good, two legs bad’","Boxer’s strength","The farmhouse","Windmill collapsing"], correct:0},
-  {q:"Napoleon mainly represents…", a:["Democratic reform","Authoritarian leadership","A teacher","A journalist"], correct:1},
-  {q:"Why include a bibliography?", a:["Looks pretty","Credits sources & shows credibility","To add pages","It’s optional"], correct:1},
-  {q:"Research task length?", a:["250–300 words","150–200 words","300–400 words","No limit"], correct:0},
-  {q:"Creative story length?", a:["400–600 words","200–300 words","600–800 words","1000+ words"], correct:0},
-  {q:"Presentation duration?", a:["2–3 minutes","30 seconds","5–7 minutes","10 minutes"], correct:0},
-  {q:"What does the sheep’s slogan mainly show?", a:["How propaganda/oversimplification controls groups","Fair debate","Free press","Scientific method"], correct:0},
-  {q:"Animal Farm is largely based on…", a:["The Russian Revolution/Soviet regime","The French monarchy of 1600s","The American Civil War","Medieval England only"], correct:0},
-  {q:"Snowball is loosely associated with…", a:["Leon Trotsky","Winston Churchill","F. D. Roosevelt","Mao Zedong"], correct:0},
-  {q:"Why must citizens question authority in a democracy?", a:["To think critically and resist manipulation","To obey faster","To avoid voting","To silence opposition"], correct:0},
-  {q:"One requirement for Part 1 is…", a:["A reference list/bibliography of all sources","A hand-drawn farm map","A poem about Napoleon","A dramatic performance"], correct:0},
-  {q:"Which is an approved creative task option?", a:["Reimagine Animal Farm in a modern setting","Write only a haiku","Design a poster only","Record a podcast only"], correct:0},
-  {q:"Another approved option is to…", a:["Write from a minor character’s perspective","Summarise one chapter only","Only list characters","Only draw the windmill"], correct:0},
-  {q:"A strong story must include…", a:["Beginning, middle, and end","Only dialogue","Only description","No structure needed"], correct:0},
-  {q:"Your oral presentation should include…", a:["Intro to your story, theme/message, links to Animal Farm, and a reflection","Only reading the story verbatim","Only showing pictures","Only discussing your marks"], correct:0},
-  {q:"To score well in the Research Task you should…", a:["Show understanding + use at least 2 credible sources","Write 1000+ words","Avoid explaining sources","Skip structure"], correct:0},
-  {q:"How are marks split in this project?", a:["Research 20 + Creative 20 + Oral 10","Research 10 + Creative 20 + Oral 20","Research 25 + Creative 15 + Oral 10","Research 30 + Creative 10 + Oral 10"], correct:0},
+  {q:"Who is elected chief at the start of the novel?", a:["Jack","Piggy","Ralph","Simon"], c:2},
+  {q:"What does the conch shell symbolise?", a:["Violence","Civilization and order","Hunting","Fear"], c:1},
+  {q:"Who represents the scientific/rational voice?", a:["Piggy","Jack","Roger","Samneric"], c:0},
+  {q:"The 'beast' primarily represents…", a:["A real animal","A sea monster","The boys' inner savagery","A ghost"], c:2},
+  {q:"Who leads the hunters?", a:["Ralph","Roger","Jack","Simon"], c:2},
+  {q:"What is the 'Lord of the Flies' literally?", a:["A skull","A pig's head on a stake","A mask","A conch"], c:1},
+  {q:"Why is the signal fire important?", a:["Cooking only","Warmth only","Rescue/connection to civilization","Decoration"], c:2},
+  {q:"Simon’s death occurs during…", a:["A storm dance frenzy","A quiet night","A boat trip","A meeting"], c:0},
+  {q:"Which boy is deliberately cruel and sadistic?", a:["Piggy","Ralph","Roger","Percival"], c:2},
+  {q:"What happens to the conch?", a:["It is kept safe","It is lost at sea","It shatters with Piggy's death","It turns gold"], c:2},
+  {q:"The painted masks mainly allow the boys to…", a:["See better","Swim faster","Hide identity & unleash savagery","Talk to adults"], c:2},
+  {q:"How are the boys finally rescued?", a:["Signal fire attracts a naval officer","A passing plane sees them sleep","They build a raft","They never are"], c:0},
+  {q:"Ralph’s main priority as leader is…", a:["Hunting pigs","Building shelters & keeping the fire","Swimming","Exploring caves"], c:1},
+  {q:"Piggy’s glasses symbolize…", a:["Beauty","Wealth","Knowledge/technology & power of fire","Friendship"], c:2},
+  {q:"The island at first seems like…", a:["A paradise/Garden of Eden","A city","A desert","A prison"], c:0},
+  {q:"Jack’s tribe ultimately hunts Ralph by…", a:["Setting the forest on fire","Debating","Singing","Sailing"], c:0},
+  {q:"Golding suggests human nature is…", a:["Naturally orderly","Easily corrupted / prone to savagery","Fixed by rules","Unchangingly good"], c:1},
+  {q:"Samneric are best described as…", a:["Two separate leaders","Twins often treated as one","The youngest boys","The oldest boys"], c:1},
+  {q:"Who discovers the 'beast' is a dead parachutist?", a:["Ralph","Simon","Roger","Jack"], c:1},
+  {q:"Piggy is killed by…", a:["A falling tree","A rock pushed by Roger","A spear","A snake"], c:1},
 ];
 
-function fitCanvas(){
-  const w = Math.min(560, Math.floor(window.innerWidth-28));
-  const side = Math.max(320, w);
-  canvas.width = side;
-  canvas.height = side;
+/* ---------- Quiz Logic ---------- */
+let quizIdx = 0;
+function nextQuestion(){
+  quizIdx = (quizIdx + Math.floor(Math.random()*5)+1) % QUIZ.length; // semi-random progression
+  return QUIZ[quizIdx];
 }
-fitCanvas();
-window.addEventListener("resize", fitCanvas);
-
-function cellSize(){ return canvas.width / grid; }
-
-function initGame(){
-  snakeBody = [{x:10,y:10}];
-  dir = {x:1,y:0}; nextDir = {x:1,y:0};
-  food = spawnFood();
-  running=false; score=0; level=1; tickMs=190; pendingQuestion=false; foodsEaten=0; gameIsOver=false;
-  scoreEl.textContent = score; levelEl.textContent = level;
-  quizBox.style.display="none";
-  draw();
+function showToast(msg, ms=900){
+  toast.textContent = msg;
+  toast.style.display = "block";
+  setTimeout(()=>toast.style.display="none", ms);
 }
-function spawnFood(){
-  while(true){
-    const f = {x:Math.floor(Math.random()*grid), y:Math.floor(Math.random()*grid)};
-    if(!snakeBody.some(s=>s.x===f.x && s.y===f.y)) return f;
-  }
+function centerFlash(msg, ms=800){
+  centerMsg.textContent = msg;
+  centerMsg.style.display = "block";
+  setTimeout(()=>centerMsg.style.display="none", ms);
 }
-function draw(){
-  const size = cellSize();
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // checker bg
-  for(let y=0;y<grid;y++){
-    for(let x=0;x<grid;x++){
-      if((x+y)%2===0){
-        ctx.fillStyle = "#0f1d3d";
-        ctx.fillRect(x*size,y*size,size,size);
-      }
-    }
-  }
-  // food
-  ctx.fillStyle = "#f94144";
-  ctx.fillRect(food.x*size, food.y*size, size, size);
-  // snake
-  snakeBody.forEach((s,i)=>{
-    ctx.fillStyle = i===0 ? "#5bc0be" : "#51aeb0";
-    ctx.fillRect(s.x*size+1, s.y*size+1, size-2, size-2);
-  });
-}
-function step(){
-  if(!running || pendingQuestion || gameIsOver){ return; }
-
-  // apply nextDir (avoid reversing)
-  if((nextDir.x !== -dir.x) || (nextDir.y !== -dir.y)){ dir = {...nextDir}; }
-
-  const head = {x:snakeBody[0].x + dir.x, y:snakeBody[0].y + dir.y};
-  // walls
-  if(head.x<0||head.y<0||head.x>=grid||head.y>=grid){ gameOver(); return; }
-  // self hit
-  if(snakeBody.some((s,i)=>i>0 && s.x===head.x && s.y===head.y)){ gameOver(); return; }
-  snakeBody.unshift(head);
-
-  // eat
-  if(head.x===food.x && head.y===food.y){
-    score+=10; scoreEl.textContent=score;
-    foodsEaten += 1;
-    food = spawnFood();
-
-    // level up every 4 foods (tunable)
-    if(foodsEaten % 4 === 0){ level++; levelEl.textContent = level; tickMs = Math.max(90, tickMs-12); }
-
-    // EXACT REQUIREMENT: ask a question after every 2 foods eaten
-    if(foodsEaten % 2 === 0){
-      askQuestion();
-      draw(); // draw updated positions before pausing
-      return; // askQuestion() pauses the game
-    }
-  }else{
-    snakeBody.pop();
-  }
-
-  draw();
-  loopId = setTimeout(step, tickMs);
-}
-function gameOver(){
-  running=false; gameIsOver=true;
-  clearTimeout(loopId);
-  quizBox.style.display="block";
-  qText.innerHTML = `<strong>Game over.</strong> Score: ${score}. Tap <em>Restart</em> to try again.`;
-  answersEl.innerHTML = "";
-}
-function start(){
-  if(running || gameIsOver) return;
-  running=true;
-  clearTimeout(loopId);
-  loopId = setTimeout(step, tickMs);
-}
-function pause(){
-  running=false; clearTimeout(loopId);
-}
-function restart(){
-  pause(); initGame(); start();
-}
-
-startBtn.onclick = ()=>{start();};
-pauseBtn.onclick = ()=>{pause();};
-restartBtn.onclick = ()=>{restart();};
 
 function askQuestion(){
-  if(gameIsOver) return;
-  pendingQuestion = true;
-  pause();
-
-  const item = QUIZ[Math.floor(Math.random()*QUIZ.length)];
-  quizBox.style.display="block";
-  qText.textContent = item.q;
+  pausedForQuiz = true;
+  overlay.style.display = "flex";
   answersEl.innerHTML = "";
-
-  item.a.forEach((opt,i)=>{
+  const q = nextQuestion();
+  qText.textContent = q.q;
+  q.a.forEach((opt, i)=>{
     const b = document.createElement("button");
-    b.className = "btn";
+    b.className = "ok";
     b.textContent = opt;
-    b.addEventListener("click", ()=>{
-      if(i===item.correct){
-        score+=5; scoreEl.textContent=score;
-        qText.textContent = "✅ Correct! +5";
+    b.onclick = ()=>{
+      const correct = i===q.c;
+      if(correct){
+        score += 25;
+        centerFlash("✅ Correct! +25", 900);
       }else{
-        qText.textContent = "❌ Not quite. Keep learning!";
+        centerFlash("❌ Not quite", 900);
+        score = Math.max(0, score-5);
       }
-      setTimeout(()=>{
-        quizBox.style.display="none";
-        pendingQuestion=false;
-        if(!gameIsOver){ start(); }
-      }, 700);
-    });
+      overlay.style.display = "none";
+      pausedForQuiz = false;
+    };
+    b.oncontextmenu = (e)=>e.preventDefault();
+    // visual alt styling per option
+    if(i!==q.c){ b.className = "no"; }
     answersEl.appendChild(b);
   });
 }
+document.getElementById("skip").onclick = ()=>{
+  overlay.style.display = "none";
+  pausedForQuiz = false;
+};
+document.getElementById("resume").onclick = ()=>{
+  overlay.style.display = "none";
+  pausedForQuiz = false;
+};
 
-/* Direction controls: keyboard + on-screen + swipe */
-const keyMap = {ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",w:"up",s:"down",a:"left",d:"right"};
-function setDir(d){
-  if(d==="up")   nextDir={x:0,y:-1};
-  if(d==="down") nextDir={x:0,y:1};
-  if(d==="left") nextDir={x:-1,y:0};
-  if(d==="right")nextDir={x:1,y:0};
+/* ---------- Controls / Pause / Restart ---------- */
+document.getElementById("pauseBtn").onclick = ()=>{
+  running = !running;
+  centerFlash(running ? "▶ RESUME" : "II PAUSED", 800);
+};
+document.getElementById("restartBtn").onclick = reset;
+
+function reset(){
+  running = true; pausedForQuiz=false; boostTimer = 0;
+  speed = 18; targetSpeed=22; maxSpeed=32; dist=0; score=0; coinsCount=0;
+  car.position.x = 0; car.position.z = 4;
+  // re-seed collectibles positions
+  coins.forEach(c=>{ c.position.set(randX(), 0.7, -Math.random()*SEG_COUNT*SEG_LEN); });
+  boosts.forEach(b=>{ b.position.set(0, 0.03, -Math.random()*SEG_COUNT*SEG_LEN); });
+  centerFlash("⟲ RESTART");
 }
-document.addEventListener("keydown",(e)=>{
-  const d = keyMap[e.key]; if(d){ e.preventDefault(); setDir(d); }
-});
-document.querySelectorAll(".ctl").forEach(btn=>{
-  const d = btn.dataset.dir;
-  const fire = (ev)=>{ ev.preventDefault(); setDir(d); };
-  btn.addEventListener("touchstart", fire, {passive:false});
-  btn.addEventListener("mousedown", fire);
+
+/* ---------- Main update loop ---------- */
+function animate(now){
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, (now - tPrev)/1000); // clamp delta
+  tPrev = now;
+
+  if(!running || pausedForQuiz) {
+    renderer.render(scene, camera);
+    return;
+  }
+
+  // steering input
+  const steerLeft = keys["arrowleft"]||keys["a"];
+  const steerRight= keys["arrowright"]||keys["d"];
+  const boostKey  = keys[" "]||keys["arrowup"];
+  const brakeKey  = keys["shift"]||keys["arrowdown"];
+
+  if(steerLeft && !steerRight) steer = THREE.MathUtils.damp(steer, -1.0, 8, dt);
+  else if(steerRight && !steerLeft) steer = THREE.MathUtils.damp(steer,  1.0, 8, dt);
+  else steer = THREE.MathUtils.damp(steer, 0, 6, dt);
+
+  // speed control
+  if(boostKey) targetSpeed = Math.min(maxSpeed, targetSpeed + 8*dt);
+  if(brakeKey) targetSpeed = Math.max(minSpeed, targetSpeed - 18*dt);
+  if(boostTimer>0){ targetSpeed = Math.max(targetSpeed, maxSpeed); boostTimer -= dt; }
+  speed = THREE.MathUtils.damp(speed, targetSpeed, 3, dt);
+
+  // move car laterally; clamp to track
+  car.position.x += steer * 6 * dt;
+  car.position.x = THREE.MathUtils.clamp(car.position.x, -TRACK_WIDTH/2+0.7, TRACK_WIDTH/2-0.7);
+
+  // move world backwards to simulate forward motion
+  const moveZ = speed * dt;
+  dist += moveZ;
+  score = Math.floor(dist) + coinsCount*50 + Math.floor(speed*2);
+  segments.forEach((g)=>{
+    g.position.z += moveZ;
+    if(g.position.z > SEG_LEN) g.position.z -= SEG_LEN*SEG_COUNT;
+  });
+  [...laneStrips, ...coins, ...boosts, ...wallsLeft, ...wallsRight, ...floors].forEach(m=>{
+    m.position.z += moveZ;
+    if(m.position.z > 10){
+      // recycle behind
+      m.position.z -= SEG_LEN*SEG_COUNT;
+      if(m.userData.type==="coin"){ m.position.x = randX(); }
+    }
+  });
+
+  // collisions with walls: if too close, slow down and bounce slightly
+  const edge = TRACK_WIDTH/2 - 0.8;
+  if(Math.abs(car.position.x) > edge){
+    targetSpeed = Math.max(minSpeed, targetSpeed - 10*dt);
+    car.position.x = THREE.MathUtils.clamp(car.position.x, -edge, edge);
+    centerFlash("⚡ WALL HIT – SLOW!", 300);
+  }
+
+  // coin collision
+  const carBox = carAABB();
+  coins.forEach(c=>{
+    const box = {x:c.position.x, z:c.position.z, w:0.6, d:0.6};
+    if(aabbIntersect(carBox, box)){
+      coinsCount++; score += 10;
+      c.position.z -= SEG_LEN*SEG_COUNT; // recycle far ahead
+      c.position.x = randX();
+      showToast("🪙 Coin!");
+      // Ask a question on EVERY coin
+      askQuestion();
+    }
+  });
+
+  // boost collision
+  boosts.forEach(b=>{
+    const box = {x:b.position.x, z:b.position.z, w:TRACK_WIDTH*0.7, d:1.8};
+    if(aabbIntersect(carBox, box)){
+      boostTimer = 3.0;               // 3 seconds strong boost
+      maxSpeed = 40;
+      targetSpeed = Math.max(targetSpeed, 36);
+      centerFlash("🚀 BOOST +", 650);
+      b.position.z -= SEG_LEN*SEG_COUNT; // recycle
+    }
+  });
+
+  // camera follow (light smoothing)
+  camera.position.x = THREE.MathUtils.damp(camera.position.x, car.position.x * 0.45, 3, dt);
+  camera.position.z = THREE.MathUtils.damp(camera.position.z, car.position.z + 6, 3, dt);
+  camera.lookAt(car.position.x, 0.4, car.position.z - 6);
+
+  // HUD
+  hud.speed.textContent = Math.round(speed).toString();
+  hud.coins.textContent = coinsCount.toString();
+  hud.dist.textContent  = Math.floor(dist).toString();
+  hud.score.textContent = score.toString();
+
+  renderer.render(scene, camera);
+}
+reset();
+requestAnimationFrame(animate);
+
+/* ---------- Resize ---------- */
+window.addEventListener("resize", ()=>{
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-/* Swipe on canvas */
-let touchStartX=0,touchStartY=0,touching=false;
-canvas.addEventListener("touchstart",(e)=>{
-  if(e.touches.length){ touching=true; const t=e.touches[0]; touchStartX=t.clientX; touchStartY=t.clientY; }
-},{passive:false});
-canvas.addEventListener("touchmove",(e)=>{ e.preventDefault(); }, {passive:false});
-canvas.addEventListener("touchend",(e)=>{
-  if(!touching) return; touching=false;
-  const t = e.changedTouches[0];
-  const dx = t.clientX - touchStartX;
-  const dy = t.clientY - touchStartY;
-  const ax = Math.abs(dx), ay=Math.abs(dy);
-  if(Math.max(ax,ay) < 24) return; // tiny moves ignored
-  if(ax>ay){ setDir(dx>0?"right":"left"); } else { setDir(dy>0?"down":"up"); }
+/* ---------- Prevent page scroll on mobile controls ---------- */
+["left","right","boost","brake"].forEach(id=>{
+  const el = document.getElementById(id);
+  ["touchstart","touchmove","touchend"].forEach(ev=>{
+    el.addEventListener(ev, e=>e.preventDefault(), {passive:false});
+  });
 });
-
-/* Prevent scrolling when tapping controls */
-["touchmove","gesturestart"].forEach(evt=>{
-  document.getElementById("dpad").addEventListener(evt, e=>e.preventDefault(), {passive:false});
-});
-
-/* Init */
-initGame();
 </script>
 </body>
 </html>
