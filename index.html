@@ -17,7 +17,7 @@
   .mode-switch{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
   .btn{background:var(--accent);border:none;color:#071018;font-weight:700;padding:10px 14px;border-radius:12px;cursor:pointer}
   .btn.alt{background:var(--accent2);color:#1a1302}
-  .btn.ghost{background:#0000;border:2px solid var(--accent);color:var(--text)}
+  .btn.ghost{background:#0000;border:2px solid var(--accent);color:#e6eef5}
   .btn:active{transform:translateY(1px)}
   .panel{background:var(--panel);border:1px solid #2a355c;border-radius:16px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
   /* tabs */
@@ -116,12 +116,12 @@
         <div class="answers" id="answers"></div>
       </div>
 
-      <div class="tip">Touch controls: use the on‑screen arrows or **swipe** on the board. Turn tablet to landscape for best play.</div>
+      <div class="tip">Touch controls: use the on-screen arrows or <strong>swipe</strong> on the board. Turn tablet to landscape for best play.</div>
     </div>
   </section>
 </div>
 
-<!-- On-screen D‑Pad -->
+<!-- On-screen D-Pad -->
 <div class="dpad" id="dpad" aria-label="On-screen controls" role="group">
   <div class="sp"></div>
   <div class="ctl" data-dir="up">▲</div>
@@ -136,27 +136,27 @@
 const sets = {
   project: [
     {t:"Two parts of the project", d:"Part 1 = Research (theme, context, propaganda). Part 2 = Creative Writing (a modern allegory) + short presentation."},
-    {t:"Part 1 — Encompassing element", d:"Connect Animal Farm to **real‑world politics/history** using at least 2 credible sources; include a reference list."},
-    {t:"Part 2 — Encompassing element", d:"Write an original **allegory/short story** that mirrors themes (power, propaganda, corruption, equality) with a clear beginning–middle–end."},
-    {t:"Submission basics", d:"A4 research write‑up (250–300 words), bibliography, cover page; story 400–600 words; presentation based on your story."},
-    {t:"Key quote for Part 1", d:"“Four legs good, two legs bad.” — use it to discuss **propaganda** and how simple slogans can control groups."},
+    {t:"Part 1 — Encompassing element", d:"Connect Animal Farm to real-world politics/history using credible sources; include a reference list."},
+    {t:"Part 2 — Encompassing element", d:"Write an original allegory/short story mirroring themes (power, propaganda, corruption, equality) with a clear structure."},
+    {t:"Submission basics", d:"A4 research write-up (±250–300 words), bibliography, cover page; story 400–600 words; presentation 2–3 minutes."},
+    {t:"Key quote for Part 1", d:"“Four legs good, two legs bad.” — discuss propaganda and how simple slogans can control groups."},
     {t:"Mark focus", d:"Part 1 (20): concepts, sources, clarity. Part 2 (20): theme, character, conflict, craft. Presentation (10): clarity, evidence, delivery."}
   ],
   themes: [
     {t:"Propaganda", d:"Messages designed to shape opinion/behaviour. In the novel, slogans and manipulated facts keep animals obedient."},
     {t:"Power & Corruption", d:"Unchecked power corrupts. Leaders change rules to benefit themselves."},
-    {t:"Equality vs. Control", d:"Revolution promises equality; the elite re‑write rules to entrench control."},
+    {t:"Equality vs. Control", d:"Revolution promises equality; the elite re-write rules to entrench control."},
     {t:"Critical Citizenship", d:"In democracies, citizens must question authority and verify claims against evidence."},
     {t:"Allegory", d:"A story with a second meaning: characters/events represent real people/systems."},
-    {t:"Maxim analysis", d:"“Four legs good, two legs bad” shows how **oversimplification** stifles thinking."}
+    {t:"Maxim analysis", d:"“Four legs good, two legs bad” shows how oversimplification stifles thinking."}
   ],
   characters: [
     {t:"Napoleon", d:"Represents authoritarian leadership; uses fear/propaganda to consolidate power."},
     {t:"Snowball", d:"Represents revolutionary idealism, later scapegoated to control the farm."},
     {t:"Squealer", d:"The propaganda voice; twists language and ‘statistics’ to justify power."},
     {t:"Sheep", d:"Echo chamber: repeat slogans, drown out debate."},
-    {t:"Clover/Boxer", d:"Hard‑working, loyal; exploited by the leadership."},
-    {t:"Seven Commandments → one", d:"Gradual rule‑changes show how rights erode when people stop checking power."}
+    {t:"Clover/Boxer", d:"Hard-working, loyal; exploited by the leadership."},
+    {t:"Seven Commandments → one", d:"Gradual rule-changes show how rights erode when people stop checking power."}
   ]
 };
 
@@ -218,10 +218,11 @@ snakeBtn.onclick = ()=>{flashcards.style.display="none";snake.style.display="blo
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 const grid = 21;                 // 21x21 grid
-const size = canvas.width / grid;
 
 let snakeBody, dir, nextDir, food, running=false, score=0, level=1, tickMs=190, loopId=null;
+let foodsEaten = 0;              // <<— exact trigger for quiz: ask after every 2 foods
 let pendingQuestion=false;
+let gameIsOver=false;
 
 const scoreEl = document.getElementById("score");
 const levelEl = document.getElementById("level");
@@ -232,21 +233,46 @@ const quizBox = document.getElementById("quizBox");
 const qText = document.getElementById("qText");
 const answersEl = document.getElementById("answers");
 
-/* Quiz bank – short, tablet‑friendly */
+/* Quiz bank – extended and aligned with your brief */
 const QUIZ = [
   {q:"Project structure?", a:["Two parts: Research + Creative writing (+ presentation)","Only a test","Only a speech","Only a poem"], correct:0},
   {q:"Part 1 focuses on…", a:["Creative plot","Historical/real links + propaganda analysis","Drawing characters","Only grammar"], correct:1},
   {q:"Part 2 focuses on…", a:["Original allegory with theme & conflict","Copying the novel","Writing a script of Chapter 3","Biography"], correct:0},
   {q:"Example of propaganda in the novel?", a:["‘Four legs good, two legs bad’","Boxer’s strength","The farmhouse","Windmill collapsing"], correct:0},
   {q:"Napoleon mainly represents…", a:["Democratic reform","Authoritarian leadership","A teacher","A journalist"], correct:1},
-  {q:"Why include a bibliography?", a:["Looks pretty","Credits sources & shows credibility","To add pages","It’s optional"], correct:1}
+  {q:"Why include a bibliography?", a:["Looks pretty","Credits sources & shows credibility","To add pages","It’s optional"], correct:1},
+  {q:"Research task length?", a:["250–300 words","150–200 words","300–400 words","No limit"], correct:0},
+  {q:"Creative story length?", a:["400–600 words","200–300 words","600–800 words","1000+ words"], correct:0},
+  {q:"Presentation duration?", a:["2–3 minutes","30 seconds","5–7 minutes","10 minutes"], correct:0},
+  {q:"What does the sheep’s slogan mainly show?", a:["How propaganda/oversimplification controls groups","Fair debate","Free press","Scientific method"], correct:0},
+  {q:"Animal Farm is largely based on…", a:["The Russian Revolution/Soviet regime","The French monarchy of 1600s","The American Civil War","Medieval England only"], correct:0},
+  {q:"Snowball is loosely associated with…", a:["Leon Trotsky","Winston Churchill","F. D. Roosevelt","Mao Zedong"], correct:0},
+  {q:"Why must citizens question authority in a democracy?", a:["To think critically and resist manipulation","To obey faster","To avoid voting","To silence opposition"], correct:0},
+  {q:"One requirement for Part 1 is…", a:["A reference list/bibliography of all sources","A hand-drawn farm map","A poem about Napoleon","A dramatic performance"], correct:0},
+  {q:"Which is an approved creative task option?", a:["Reimagine Animal Farm in a modern setting","Write only a haiku","Design a poster only","Record a podcast only"], correct:0},
+  {q:"Another approved option is to…", a:["Write from a minor character’s perspective","Summarise one chapter only","Only list characters","Only draw the windmill"], correct:0},
+  {q:"A strong story must include…", a:["Beginning, middle, and end","Only dialogue","Only description","No structure needed"], correct:0},
+  {q:"Your oral presentation should include…", a:["Intro to your story, theme/message, links to Animal Farm, and a reflection","Only reading the story verbatim","Only showing pictures","Only discussing your marks"], correct:0},
+  {q:"To score well in the Research Task you should…", a:["Show understanding + use at least 2 credible sources","Write 1000+ words","Avoid explaining sources","Skip structure"], correct:0},
+  {q:"How are marks split in this project?", a:["Research 20 + Creative 20 + Oral 10","Research 10 + Creative 20 + Oral 20","Research 25 + Creative 15 + Oral 10","Research 30 + Creative 10 + Oral 10"], correct:0},
 ];
+
+function fitCanvas(){
+  const w = Math.min(560, Math.floor(window.innerWidth-28));
+  const side = Math.max(320, w);
+  canvas.width = side;
+  canvas.height = side;
+}
+fitCanvas();
+window.addEventListener("resize", fitCanvas);
+
+function cellSize(){ return canvas.width / grid; }
 
 function initGame(){
   snakeBody = [{x:10,y:10}];
   dir = {x:1,y:0}; nextDir = {x:1,y:0};
   food = spawnFood();
-  running=false; score=0; level=1; tickMs=190; pendingQuestion=false;
+  running=false; score=0; level=1; tickMs=190; pendingQuestion=false; foodsEaten=0; gameIsOver=false;
   scoreEl.textContent = score; levelEl.textContent = level;
   quizBox.style.display="none";
   draw();
@@ -258,8 +284,9 @@ function spawnFood(){
   }
 }
 function draw(){
+  const size = cellSize();
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  // grid bg
+  // checker bg
   for(let y=0;y<grid;y++){
     for(let x=0;x<grid;x++){
       if((x+y)%2===0){
@@ -278,7 +305,8 @@ function draw(){
   });
 }
 function step(){
-  if(!running){ return; }
+  if(!running || pendingQuestion || gameIsOver){ return; }
+
   // apply nextDir (avoid reversing)
   if((nextDir.x !== -dir.x) || (nextDir.y !== -dir.y)){ dir = {...nextDir}; }
 
@@ -292,26 +320,34 @@ function step(){
   // eat
   if(head.x===food.x && head.y===food.y){
     score+=10; scoreEl.textContent=score;
-    // quiz chance every 2 foods
-    if(score % 20 === 0){ askQuestion(); }
+    foodsEaten += 1;
     food = spawnFood();
-    // speed up a bit
-    if(score % 40 === 0){ level++; levelEl.textContent = level; tickMs = Math.max(90, tickMs-12); }
+
+    // level up every 4 foods (tunable)
+    if(foodsEaten % 4 === 0){ level++; levelEl.textContent = level; tickMs = Math.max(90, tickMs-12); }
+
+    // EXACT REQUIREMENT: ask a question after every 2 foods eaten
+    if(foodsEaten % 2 === 0){
+      askQuestion();
+      draw(); // draw updated positions before pausing
+      return; // askQuestion() pauses the game
+    }
   }else{
     snakeBody.pop();
   }
+
   draw();
   loopId = setTimeout(step, tickMs);
 }
 function gameOver(){
-  running=false;
+  running=false; gameIsOver=true;
   clearTimeout(loopId);
   quizBox.style.display="block";
   qText.innerHTML = `<strong>Game over.</strong> Score: ${score}. Tap <em>Restart</em> to try again.`;
   answersEl.innerHTML = "";
 }
 function start(){
-  if(running) return;
+  if(running || gameIsOver) return;
   running=true;
   clearTimeout(loopId);
   loopId = setTimeout(step, tickMs);
@@ -328,11 +364,15 @@ pauseBtn.onclick = ()=>{pause();};
 restartBtn.onclick = ()=>{restart();};
 
 function askQuestion(){
-  pendingQuestion = true; pause();
+  if(gameIsOver) return;
+  pendingQuestion = true;
+  pause();
+
   const item = QUIZ[Math.floor(Math.random()*QUIZ.length)];
   quizBox.style.display="block";
   qText.textContent = item.q;
   answersEl.innerHTML = "";
+
   item.a.forEach((opt,i)=>{
     const b = document.createElement("button");
     b.className = "btn";
@@ -346,7 +386,8 @@ function askQuestion(){
       }
       setTimeout(()=>{
         quizBox.style.display="none";
-        pendingQuestion=false; start();
+        pendingQuestion=false;
+        if(!gameIsOver){ start(); }
       }, 700);
     });
     answersEl.appendChild(b);
@@ -394,14 +435,6 @@ canvas.addEventListener("touchend",(e)=>{
 
 /* Init */
 initGame();
-
-/* Helpful: auto-size canvas to viewport while keeping square cells */
-function fitCanvas(){
-  const w = Math.min(560, Math.floor(window.innerWidth-28));
-  canvas.width = canvas.height = Math.max(320, w);
-}
-fitCanvas();
-window.addEventListener("resize", fitCanvas);
 </script>
 </body>
 </html>
